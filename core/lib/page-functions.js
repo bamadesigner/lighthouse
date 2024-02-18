@@ -570,6 +570,40 @@ function createEsbuildFunctionWrapper() {
   return `let ${wrapperFnName}=${esbuildFunctionWrapper}`;
 }
 
+/** @type {string} */
+const getTruncateRawString = truncate.toString();
+truncate.toString = () => `function truncate(string, characterLimit) {
+  ${truncate};
+  return (${getTruncateRawString})(string, characterLimit);
+}`;
+
+/** @type {string} */
+const getNodeLabelRawString = getNodeLabel.toString();
+getNodeLabel.toString = () => `function getNodeLabel(element) {
+  ${truncate};
+  return (${getNodeLabelRawString})(element);
+}`;
+
+/** @type {string} */
+const getOuterHTMLSnippetRawString = getOuterHTMLSnippet.toString();
+// eslint-disable-next-line max-len
+getOuterHTMLSnippet.toString = () => `function getOuterHTMLSnippet(element, ignoreAttrs = [], snippetCharacterLimit = 500) {
+  ${truncate};
+  return (${getOuterHTMLSnippetRawString})(element, ignoreAttrs, snippetCharacterLimit);
+}`;
+
+/** @type {string} */
+const getNodeDetailsRawString = getNodeDetails.toString();
+getNodeDetails.toString = () => `function getNodeDetails(element) {
+  ${truncate};
+  ${getNodePath};
+  ${getNodeSelector};
+  ${getBoundingClientRect};
+  ${getOuterHTMLSnippetRawString};
+  ${getNodeLabelRawString};
+  return (${getNodeDetailsRawString})(element);
+}`;
+
 /**
  * @param {Function} fn
  * @return {string}
@@ -579,48 +613,6 @@ function getRuntimeFunctionName(fn) {
   if (!match) throw new Error(`could not find function name for: ${fn}`);
   return match[1];
 }
-
-// We setup a number of our page functions to automatically include their dependencies.
-// Because of esbuild bundling, we must refer to the actual (mangled) runtime function name.
-/** @type {Record<string, string>} */
-const names = {
-  truncate: getRuntimeFunctionName(truncate),
-  getNodeLabel: getRuntimeFunctionName(getNodeLabel),
-  getOuterHTMLSnippet: getRuntimeFunctionName(getOuterHTMLSnippet),
-  getNodeDetails: getRuntimeFunctionName(getNodeDetails),
-};
-
-truncate.toString = () => `function ${names.truncate}(string, characterLimit) {
-  const Util = { ${Util.truncate} };
-  return Util.truncate(string, characterLimit);
-}`;
-
-/** @type {string} */
-const getNodeLabelRawString = getNodeLabel.toString();
-getNodeLabel.toString = () => `function ${names.getNodeLabel}(element) {
-  ${truncate};
-  return (${getNodeLabelRawString})(element);
-}`;
-
-/** @type {string} */
-const getOuterHTMLSnippetRawString = getOuterHTMLSnippet.toString();
-// eslint-disable-next-line max-len
-getOuterHTMLSnippet.toString = () => `function ${names.getOuterHTMLSnippet}(element, ignoreAttrs = [], snippetCharacterLimit = 500) {
-  ${truncate};
-  return (${getOuterHTMLSnippetRawString})(element, ignoreAttrs, snippetCharacterLimit);
-}`;
-
-/** @type {string} */
-const getNodeDetailsRawString = getNodeDetails.toString();
-getNodeDetails.toString = () => `function ${names.getNodeDetails}(element) {
-  ${truncate};
-  ${getNodePath};
-  ${getNodeSelector};
-  ${getBoundingClientRect};
-  ${getOuterHTMLSnippetRawString};
-  ${getNodeLabelRawString};
-  return (${getNodeDetailsRawString})(element);
-}`;
 
 export const pageFunctions = {
   wrapRuntimeEvalErrorInBrowser,
