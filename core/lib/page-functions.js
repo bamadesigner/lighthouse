@@ -570,6 +570,38 @@ function createEsbuildFunctionWrapper() {
   return `let ${wrapperFnName}=${esbuildFunctionWrapper}`;
 }
 
+truncate.toString = () => `function truncate(string, characterLimit) {
+  const Util = { ${Util.truncate} };
+  return Util.truncate(string, characterLimit);
+}`;
+
+/** @type {string} */
+const getNodeLabelRawString = getNodeLabel.toString();
+getNodeLabel.toString = () => `function getNodeLabel(element) {
+  ${truncate};
+  return (${getNodeLabelRawString})(element);
+}`;
+
+/** @type {string} */
+const getOuterHTMLSnippetRawString = getOuterHTMLSnippet.toString();
+// eslint-disable-next-line max-len
+getOuterHTMLSnippet.toString = () => `function getOuterHTMLSnippet(element, ignoreAttrs = [], snippetCharacterLimit = 500) {
+  ${truncate};
+  return (${getOuterHTMLSnippetRawString})(element, ignoreAttrs, snippetCharacterLimit);
+}`;
+
+/** @type {string} */
+const getNodeDetailsRawString = getNodeDetails.toString();
+getNodeDetails.toString = () => `function getNodeDetails(element) {
+  ${truncate};
+  ${getNodePath};
+  ${getNodeSelector};
+  ${getBoundingClientRect};
+  ${getOuterHTMLSnippetRawString};
+  ${getNodeLabelRawString};
+  return (${getNodeDetailsRawString})(element);
+}`;
+
 /**
  * @param {Function} fn
  * @return {string}
@@ -589,38 +621,6 @@ const names = {
   getOuterHTMLSnippet: getRuntimeFunctionName(getOuterHTMLSnippet),
   getNodeDetails: getRuntimeFunctionName(getNodeDetails),
 };
-
-truncate.toString = () => `function ${names.truncate}(string, characterLimit) {
-  const Util = { ${Util.truncate} };
-  return Util.truncate(string, characterLimit);
-}`;
-
-/** @type {string} */
-const getNodeLabelRawString = getNodeLabel.toString();
-getNodeLabel.toString = () => `function ${names.getNodeLabel}(element) {
-  ${truncate};
-  return (${getNodeLabelRawString})(element);
-}`;
-
-/** @type {string} */
-const getOuterHTMLSnippetRawString = getOuterHTMLSnippet.toString();
-// eslint-disable-next-line max-len
-getOuterHTMLSnippet.toString = () => `function ${names.getOuterHTMLSnippet}(element, ignoreAttrs = [], snippetCharacterLimit = 500) {
-  ${truncate};
-  return (${getOuterHTMLSnippetRawString})(element, ignoreAttrs, snippetCharacterLimit);
-}`;
-
-/** @type {string} */
-const getNodeDetailsRawString = getNodeDetails.toString();
-getNodeDetails.toString = () => `function ${names.getNodeDetails}(element) {
-  ${truncate};
-  ${getNodePath};
-  ${getNodeSelector};
-  ${getBoundingClientRect};
-  ${getOuterHTMLSnippetRawString};
-  ${getNodeLabelRawString};
-  return (${getNodeDetailsRawString})(element);
-}`;
 
 export const pageFunctions = {
   wrapRuntimeEvalErrorInBrowser,
